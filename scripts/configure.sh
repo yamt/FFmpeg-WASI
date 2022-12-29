@@ -14,7 +14,7 @@ FFMPEG_CONFIG_FLAGS_BASE=(
   --disable-runtime-cpudetect   # disable runtime cpu detect
   --disable-autodetect    # disable external libraries auto detect
   --disable-network       # https://github.com/WebAssembly/wasi-sdk/issues/112
-  --disable-pthreads
+  --enable-pthreads
   --disable-w32threads
   --disable-os2threads
   --pkg-config-flags="--static"
@@ -32,14 +32,17 @@ FFMPEG_CONFIG_FLAGS_BASE=(
   --enable-libx264
   --enable-zlib
 
-  --extra-cflags="-I../build/include"
-  --extra-ldflags="-L../build/lib"
+#  --extra-cflags="-I../build/include"
+#  --extra-ldflags="-L../build/lib"
 )
 
 mkdir -p build
 
 cd FFmpeg
-./configure ${FFMPEG_CONFIG_FLAGS_BASE[@]}
+MAX_MEMORY=131072000
+./configure ${FFMPEG_CONFIG_FLAGS_BASE[@]} \
+--extra-cflags="-pthread -target wasm32-wasi-pthread -ftls-model=local-exec -I../build/include" \
+--extra-ldflags="-pthread -target wasm32-wasi-pthread -Wl,--max-memory=${MAX_MEMORY} -Wl,--import-memory -L../build/lib"
 
 make -n |
   sed 's/clang /clang -D_WASI_EMULATED_PROCESS_CLOCKS -lwasi-emulated-process-clocks /g' |
